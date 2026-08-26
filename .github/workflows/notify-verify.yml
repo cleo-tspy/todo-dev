@@ -1,0 +1,15 @@
+# 開發 repo：main 有 push 時，通知驗證 repo（repository_dispatch）
+name: notify-verify
+on:
+  push:
+    branches: [main]
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.VERIFY_REPO_PAT }}   # 能對驗證 repo「Contents: write」的 fine-grained PAT
+          repository: cleo-tspy/todo-verify
+          event-type: app-updated
+          client-payload: '{"sha": "${{ github.sha }}"}'
