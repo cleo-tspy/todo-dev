@@ -38,3 +38,28 @@ def test_index_serves_page(client):
     res = client.get("/")
     assert res.status_code == 200
     assert 'id="todo-list"' in res.text
+
+
+def test_patch_updates_done(client):
+    created = client.post("/api/todos", json={"title": "buy milk"}).json()
+    res = client.patch(f"/api/todos/{created['id']}", json={"done": True})
+    assert res.status_code == 200
+    assert res.json() == {"id": created["id"], "title": "buy milk", "done": True}
+
+
+def test_patch_reflects_in_list(client):
+    created = client.post("/api/todos", json={"title": "buy milk"}).json()
+    client.patch(f"/api/todos/{created['id']}", json={"done": True})
+    assert client.get("/api/todos").json()[0]["done"] is True
+
+
+def test_patch_missing_id_returns_404(client):
+    res = client.patch("/api/todos/999", json={"done": True})
+    assert res.status_code == 404
+
+
+@pytest.mark.parametrize("body", [{}, {"done": "yes"}, {"done": None}, {"done": 1}])
+def test_patch_invalid_body_returns_4xx(client, body):
+    created = client.post("/api/todos", json={"title": "buy milk"}).json()
+    res = client.patch(f"/api/todos/{created['id']}", json=body)
+    assert 400 <= res.status_code < 500
